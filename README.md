@@ -1,4 +1,4 @@
-Clean home App
+Clean Home App                              
 Working moms often find it challenging to balance their professional and personal responsibilities. 
 One of the most significant challenges is finding a reliable nanny or babysitter to take care of their
 children while they are away at work. A home cleaning app that connects working moms with professional 
