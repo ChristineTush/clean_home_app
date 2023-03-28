@@ -1,0 +1,62 @@
+// Initialize Firebase Realtime Database
+val database = FirebaseDatabase.getInstance()
+
+// Define a data class for chat messages
+data class ChatMessage(
+    val senderId: String,
+    val receiverId: String,
+    val message: String,
+    val timestamp: Long
+)
+
+// Send a new chat message
+fun sendChatMessage(senderId: String, receiverId: String, message: String) {
+    // Get a reference to the chat messages node
+    val chatRef = database.getReference("chats")
+    // Create a new chat message object
+    val chatMessage = ChatMessage(
+        senderId = senderId,
+        receiverId = receiverId,
+        message = message,
+        timestamp = System.currentTimeMillis()
+    )
+    // Generate a new message ID
+    val messageId = chatRef.push().key
+    // Add the message to the chat messages node
+    chatRef.child(messageId!!)
+        .setValue(chatMessage)
+        .addOnSuccessListener {
+            // Message sent successfully
+            // ...
+        }
+        .addOnFailureListener { e ->
+            // Message sending failed
+            Log.e("TAG", "Message sending failed", e)
+        }
+}
+
+// Receive chat messages for a user
+fun receiveChatMessages(userId: String) {
+    // Get a reference to the chat messages node
+    val chatRef = database.getReference("chats")
+    // Listen for new chat messages
+    chatRef.addValueEventListener(object : ValueEventListener {
+        override fun onDataChange(dataSnapshot: DataSnapshot) {
+            // Chat messages data changed
+            val messages = mutableListOf<ChatMessage>()
+            for (messageSnapshot in dataSnapshot.children) {
+                val message = messageSnapshot.getValue(ChatMessage::class.java)
+                if (message != null && (message.senderId == userId || message.receiverId == userId)) {
+                    messages.add(message)
+                }
+            }
+            // Process the messages list
+            // ...
+        }
+
+        override fun onCancelled(databaseError: DatabaseError) {
+            // Chat messages data retrieval failed
+            Log.e("TAG", "Chat messages data retrieval failed", databaseError.toException())
+        }
+    })
+}
