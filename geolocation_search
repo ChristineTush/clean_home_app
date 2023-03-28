@@ -1,0 +1,64 @@
+// Initialize Google Maps Android API
+val mGoogleMap: GoogleMap
+val mFusedLocationClient: FusedLocationProviderClient
+val mLocationRequest: LocationRequest
+val mLocationCallback: LocationCallback
+
+// Initialize Firebase Firestore
+val db = FirebaseFirestore.getInstance()
+
+// Define a data class for services
+data class Service(
+    val name: String,
+    val address: String,
+    val latitude: Double,
+    val longitude: Double
+)
+
+// Perform a geolocation-based search for services
+fun searchServices(latitude: Double, longitude: Double, radius: Double) {
+    // Get a reference to the services collection
+    val servicesRef = db.collection("services")
+    // Create a geopoint for the user's location
+    val userLocation = GeoPoint(latitude, longitude)
+    // Create a geopoint for the maximum location (i.e. radius) from the user's location
+    val maxLocation = GeoPoint(latitude + radius, longitude + radius)
+    // Create a query to find all services within the specified radius
+    val query = servicesRef.whereGreaterThanOrEqualTo("location", userLocation)
+                           .whereLessThanOrEqualTo("location", maxLocation)
+    // Listen for changes in the query results
+    query.addSnapshotListener { querySnapshot, e ->
+        if (e != null) {
+            // Query failed
+            Log.e("TAG", "Query failed", e)
+            return@addSnapshotListener
+        }
+        // Query succeeded, process the results
+        val services = mutableListOf<Service>()
+        for (document in querySnapshot!!.documents) {
+            val service = document.toObject(Service::class.java)
+            if (service != null) {
+                // Calculate the distance between the user's location and the service's location
+                val distance = calculateDistance(latitude, longitude, service.latitude, service.longitude)
+                if (distance <= radius) {
+                    // Service is within the specified radius, add it to the list of services
+                    services.add(service)
+                }
+            }
+        }
+        // Process the services list
+        // ...
+    }
+}
+
+// Calculate the distance between two locations in meters
+fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+    val earthRadius = 6371000.0 // meters
+    val dLat = Math.toRadians(lat2 - lat1)
+    val dLon = Math.toRadians(lon2 - lon1)
+    val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return earthRadius * c
+}
