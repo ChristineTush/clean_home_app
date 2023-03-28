@@ -1,0 +1,21 @@
+// Initialize Firebase Authentication
+val mAuth = FirebaseAuth.getInstance()
+
+// Sign in user with email and password
+mAuth.signInWithEmailAndPassword(email, password)
+    .addOnCompleteListener { task ->
+        if (task.isSuccessful) {
+            // User login successful
+            val user = mAuth.currentUser
+            // Check if email is verified
+            if (user?.isEmailVerified == true) {
+                // Email is verified, proceed to next activity
+            } else {
+                // Email is not verified, display error message
+                Toast.makeText(this, "Please verify your email address", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            // User login failed
+            Log.e("TAG", "User login failed", task.exception)
+        }
+    }
