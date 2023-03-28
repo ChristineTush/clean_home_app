@@ -1,0 +1,55 @@
+// Initialize Firebase Firestore
+val db = FirebaseFirestore.getInstance()
+
+// Define a data class for booking
+data class Booking(
+    val userId: String,
+    val serviceId: String,
+    val date: Date,
+    val time: String,
+    val status: String
+)
+
+// Create a new booking
+fun createBooking(userId: String, serviceId: String, date: Date, time: String) {
+    // Create a new booking object
+    val booking = Booking(
+        userId = userId,
+        serviceId = serviceId,
+        date = date,
+        time = time,
+        status = "Pending"
+    )
+    // Add the booking to Firestore
+    db.collection("bookings")
+        .add(booking)
+        .addOnSuccessListener { documentReference ->
+            // Booking created successfully, get the booking ID
+            val bookingId = documentReference.id
+            // Update the user's bookings list
+            db.collection("users")
+                .document(userId)
+                .update("bookings", FieldValue.arrayUnion(bookingId))
+        }
+        .addOnFailureListener { e ->
+            // Booking creation failed
+            Log.e("TAG", "Booking creation failed", e)
+        }
+}
+
+// Get all bookings for a user
+fun getBookingsForUser(userId: String) {
+    db.collection("bookings")
+        .whereEqualTo("userId", userId)
+        .get()
+        .addOnSuccessListener { querySnapshot ->
+            // Bookings retrieved successfully
+            val bookings = querySnapshot.toObjects(Booking::class.java)
+            // Process the bookings list
+            // ...
+        }
+        .addOnFailureListener { e ->
+            // Bookings retrieval failed
+            Log.e("TAG", "Bookings retrieval failed", e)
+        }
+}
